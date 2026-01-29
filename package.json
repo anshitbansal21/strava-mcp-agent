@@ -1,0 +1,32 @@
+{
+  "name": "my-strava-mcp-server",
+  "version": "1.0.0",
+  "description": "Welcome! This directory contains everything you need to learn how to build a production-grade MCP server from scratch.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/server.ts",
+    "start": "node dist/server.ts",
+    "test": "vitest run"
+  },
+  "bin": {
+    "strava-mcp-server": "./dist/server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.3",
+    "axios": "^1.13.3",
+    "dotenv": "^17.2.3",
+    "open": "^11.0.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.10",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
