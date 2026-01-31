@@ -1,0 +1,192 @@
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import { loadConfig, updateTokens } from "./config";
+import z from "zod";
+
+
+export const stravaApi = axios.create({
+    baseURL: 'https://www.strava.com/api/v3',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    timeout: 10000
+});
+
+stravaApi.interceptors.request.use()
+/**
+ * Request interceptor - adds auth header to all requests
+ */
+stravaApi.interceptors.request.use(
+    (config: InternalAxiosRequestConfig) => {
+        const token = process.env.STRAVA_ACCESS_TOKEN;
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+/**
+ * Response interceptor - handles errors globally
+ */
+stravaApi.interceptors.response.use(
+    (response) => response,
+    async (error: AxiosError) => {
+        // Handle 401 Unauthorized errors
+        if (error.response?.status === 401) {
+            console.error('Unauthorized: Refreshing access token...');
+            try {
+                await refreshAccessToken();
+
+                if (error.config) {
+                    const newToken = process.env.STRAVA_ACCESS_TOKEN;
+                    error.config.headers.Authorization = `Bearer ${newToken}`;
+                    return stravaApi(error.config);
+                }
+            } catch (refreshError) {
+                console.error('Failed to refresh access token:', refreshError);
+                throw new Error('Failed to refresh access token. Please reconnect your Strava account.');
+            }
+        }
+        return Promise.reject(error);
+    }
+)
+
+/**
+ * Refreshes the Strava API access token using the refresh token
+ */
+async function refreshAccessToken(): Promise<void> {
+    const config = await loadConfig();
+    const refreshToken = config.refreshToken;
+    const clientId = config.clientId;
+    const clientSecret = config.clientSecret;
+
+    if (!refreshToken || !clientId || !clientSecret) {
+        throw new Error(
+            "Missing refresh credentials. PLease connect your strava account first."
+        )
+    }
+
+    try {
+        const response = await axios.post('https://www.strava.comn/oauth/token', {
+            client_id: clientId,
+            client_secret: clientSecret,
+            refresh_token: refreshToken,
+            grant_type: 'refresh_token'
+        })
+
+        const newAccessToken = response.data.access_token;
+        const newRefreshToken = response.data.refresh_token;
+        const expiresAt = response.data.expires_at;
+
+        if (!newAccessToken || !newRefreshToken) {
+            throw new Error('Refresh response missing required tokens');
+        }
+
+        await updateTokens(newAccessToken, newRefreshToken, expiresAt);
+        console.log(`✅ Token refreshed. Expires: ${new Date(expiresAt * 1000).toLocaleString()}`)
+    } catch (error) {
+        console.error("Failed to refresh access token", error)
+        throw error;
+    }
+}
+
+/**
+ * Helper function to handle API errors consistently
+ */
+export async function handleApiError<T>(
+    error: unknown,
+    context: string,
+    retryFn?: () => Promise<T>
+): Promise<T> {
+    // If it's a 401 and we have a retry function, the interceptor should have
+    // already handled it. If we're here, something else went wrong.
+
+    if (axios.isAxiosError(error)) {
+        const status = error.response?.status || 'Unknown';
+        const responseData = error.response?.data;
+
+        // Extract error message
+        // Yes, the 'as string' syntax doesn't work as a type guard here.
+        // It just tells TypeScript to treat the value as a string (even if it isn't).
+        // To safely check, use typeof:
+        const message = typeof responseData?.message === 'string' && responseData.message
+            ? responseData.message
+            : error.message;
+
+        if (status === 402) {
+            throw new Error("Subscription Required, this feature on strava needs strava subscription as it is a premium feature.")
+        } else if (status === 403) {
+            throw new Error(`Trying to get forbidden resource. Context: ${context}`);
+        } else if (status === 404) {
+            throw new Error(
+                `Not Found: The requested resource doesn't exist. Context: ${context}`
+            );
+        } else if (status === 429) {
+            throw new Error(`Rate limited: Please wait for some time. Context: ${context}`)
+        }
+
+        throw new Error(`Strava API Error (${status}) in ${context}: ${message}`);
+    }
+    // Non-Axios error
+    if (error instanceof Error) {
+        throw new Error(`Error in ${context}: ${error.message}`);
+    }
+    throw new Error(`Unknown error in ${context}: ${String(error)}`);
+}
+
+/**
+ * Example: Define a Zod schema for Strava athlete
+ */
+const AthleteSchema = z.object({
+    id: z.number(),
+    firstname: z.string(),
+    lastname: z.string(),
+    city: z.string().nullable(),
+    state: z.string().nullable(),
+    country: z.string().nullable(),
+    sex: z.enum(['M', 'F']).nullable(),
+    premium: z.boolean(),
+    created_at: z.string(),
+    updated_at: z.string(),
+    profile_medium: z.url(),
+    profile: z.url(),
+});
+
+export type StravaAthlete = z.infer<typeof AthleteSchema>;
+
+export async function getAuthenticatedAthlete(
+    accessToken: string
+): Promise<StravaAthlete> {
+    if (!accessToken) {
+        throw new Error('Access token is required.');
+    }
+
+    try {
+        const response = await stravaApi.get('/athlete', {
+            headers: {
+                Authorization: `Bearer ${accessToken}`
+            }
+        })
+        const validationResult = AthleteSchema.safeParse(response.data);
+
+        if (!validationResult.success) {
+            console.error('Validation failed', validationResult.error);
+            throw new Error(
+                `Invalid data format from Strava api: ${validationResult.error.message}`
+            )
+        }
+        return validationResult.data;
+    } catch (error) {
+        return handleApiError<StravaAthlete>(
+            error,
+            'getAuthenticatedAthlete',
+            async () => {
+                const newToken = process.env.STRAVA_ACCESS_TOKEN as string;
+                return getAuthenticatedAthlete(newToken);
+            }
+        )
+    }
+}

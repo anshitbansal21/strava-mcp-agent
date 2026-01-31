@@ -2,6 +2,7 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import z from 'zod';
 
 console.info('🏃🏼‍♂️ Starting MCP Server for Strava...');
 
@@ -30,13 +31,38 @@ server.registerTool(
     }
 );
 
+server.registerTool(
+    "echo-message-back", {
+    description: "Echo a message back to the user",
+    inputSchema: z.object({
+        message: z.string().describe("The message to echo back")
+    })
+},
+    async ({ message }) => {
+        console.info(`Echoing message back to the user: ${message}`);
+        return {
+            content: [
+                {
+                    type: "text",
+                    text: message
+                }
+            ]
+        };
+    }
+);
+
+function log(level: string, message: string) {
+    const timestamp = new Date().toISOString();
+    console.error(`[${timestamp}] [${level}] ${message}`);
+}
+McpServer.
 async function startServer() {
     try {
         const transport = new StdioServerTransport();
         await server.connect(transport);
-        console.error('🚀 MCP Server for Strava is running on stdin/stdout!');
+        log("INFO", "Server starting...");
     } catch (error) {
-        console.error('❌ Error starting server:', error);
+        log("Error", "Failed to start server...");
         process.exit(1);
     }
 }
