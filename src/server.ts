@@ -1,68 +1,95 @@
 #!/usr/bin/env node
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import * as dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+import { loadConfig } from './config.js';
+import { getAuthenticatedAthlete } from './stravaClient.js';
 
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import z from 'zod';
+// Load .env file
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, '..');
+dotenv.config({ path: path.join(projectRoot, '.env') });
 
-console.info('🏃🏼‍♂️ Starting MCP Server for Strava...');
+console.error("🚀 Starting My Strava MCP Server...");
 
 const server = new McpServer({
     name: "my-strava-mcp-server",
     version: "0.1.0"
 });
 
-// Register a tool
+// Test tool: Get athlete profile
 server.registerTool(
-    "get-activities", {
-    description: "Get recent Strava activities for the authenticated user",
+    "get-profile", {
+    description: "Get the authenticated athlete's profile from Strava",
     inputSchema: {}
 },
     async () => {
-        const activityLimit = 10;
-        // TODO: Implement actual Strava API call
-        return {
-            content: [
-                {
-                    type: "text",
-                    text: `Fetching ${activityLimit} recent activities...`
-                }
-            ]
-        };
+        try {
+            // Load config
+            const config = await loadConfig();
+            const token = config.accessToken;
+
+            if (!token) {
+                return {
+                    content: [{
+                        type: "text" as const,
+                        text: "❌ Not connected to Strava. Please set up authentication first."
+                    }],
+                    isError: true
+                };
+            }
+
+            // Call API
+            const athlete = await getAuthenticatedAthlete(token);
+
+            // Format response
+            const text = [
+                `👤 **${athlete.firstname} ${athlete.lastname}** (ID: ${athlete.id})`,
+                `📍 ${[athlete.city, athlete.state, athlete.country].filter(Boolean).join(', ') || 'Location not set'}`,
+                `🏅 ${athlete.premium ? 'Premium' : 'Free'} account`,
+                `📅 Joined: ${new Date(athlete.created_at).toLocaleDateString()}`,
+            ].join('\n');
+
+            return {
+                content: [{
+                    type: "text" as const,
+                    text
+                }]
+            };
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            return {
+                content: [{
+                    type: "text" as const,
+                    text: `❌ Error: ${message}`
+                }],
+                isError: true
+            };
+        }
     }
 );
 
-server.registerTool(
-    "echo-message-back", {
-    description: "Echo a message back to the user",
-    inputSchema: z.object({
-        message: z.string().describe("The message to echo back")
-    })
-},
-    async ({ message }) => {
-        console.info(`Echoing message back to the user: ${message}`);
-        return {
-            content: [
-                {
-                    type: "text",
-                    text: message
-                }
-            ]
-        };
-    }
-);
-
-function log(level: string, message: string) {
-    const timestamp = new Date().toISOString();
-    console.error(`[${timestamp}] [${level}] ${message}`);
-}
-McpServer.
 async function startServer() {
     try {
+        // Load config on startup
+        const config = await loadConfig();
+
+        // Update process.env if config has tokens
+        if (config.accessToken) {
+            process.env.STRAVA_ACCESS_TOKEN = config.accessToken;
+        }
+        if (config.refreshToken) {
+            process.env.STRAVA_REFRESH_TOKEN = config.refreshToken;
+        }
+
         const transport = new StdioServerTransport();
         await server.connect(transport);
-        log("INFO", "Server starting...");
+        console.error("✅ Server connected and ready!");
     } catch (error) {
-        log("Error", "Failed to start server...");
+        console.error("❌ Failed to start server:", error);
         process.exit(1);
     }
 }

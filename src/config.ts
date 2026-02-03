@@ -11,6 +11,14 @@ const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
 async function ensureConfigDir(): Promise<void> {
     try {
         await fs.mkdir(CONFIG_DIR, { recursive: true });
+        try {
+            await fs.writeFile(CONFIG_FILE, "{}", { flag: "wx" });
+        } catch (err: any) {
+            if (err.code !== "EEXIST") {
+                throw err; // real error
+            }
+            // EEXIST = file already present → all good
+        }
     } catch (error) {
         console.error('Warning: Could not create config directory:', error);
     }
@@ -111,7 +119,7 @@ export function getConfigPath(): string {
 export async function clearConfig(): Promise<void> {
     try {
         await fs.unlink(CONFIG_FILE);
-        console.error('✅ Config cleared');
+        console.log('✅ Config cleared');
     } catch {
         // File might not exist, that's fine
     }
