@@ -38,4 +38,4 @@ Learning project to build an MCP server that connects Claude to Strava.
 ## Learning Resources
 
 This is part of my Strava MCP learning journey.
-See `../LEARNING-PLAN.md` for the complete roadmap.
+See `../LEARNING-PLAN.md` for the complete roadmap.# strava-mcp-agent
