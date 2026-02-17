@@ -23,6 +23,7 @@ export interface ErrorResponse {
 
 // Tool execution result
 export interface ToolResult {
+    [x: string]: unknown;
     content: Array<{
         type: "text";
         text: string;

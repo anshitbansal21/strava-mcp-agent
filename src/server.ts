@@ -6,6 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { loadConfig } from './config.js';
 import { getAuthenticatedAthlete } from './stravaClient.js';
+import { connectStravaTool } from "./tools/connectStrava.js";
 
 // Load .env file
 const __filename = fileURLToPath(import.meta.url);
@@ -19,6 +20,15 @@ const server = new McpServer({
     name: "my-strava-mcp-server",
     version: "0.1.0"
 });
+
+// Register connection tools
+server.registerTool(
+    connectStravaTool.name, {
+    description: connectStravaTool.description,
+    inputSchema: connectStravaTool.inputSchema?.shape ?? {},
+},
+    connectStravaTool.execute
+);
 
 // Test tool: Get athlete profile
 server.registerTool(
@@ -83,6 +93,12 @@ async function startServer() {
         }
         if (config.refreshToken) {
             process.env.STRAVA_REFRESH_TOKEN = config.refreshToken;
+        }
+        if (config.clientId) {
+            process.env.STRAVA_CLIENT_ID = config.clientId;
+        }
+        if (config.clientSecret) {
+            process.env.STRAVA_CLIENT_SECRET = config.clientSecret;
         }
 
         const transport = new StdioServerTransport();
