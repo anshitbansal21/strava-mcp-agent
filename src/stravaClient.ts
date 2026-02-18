@@ -430,3 +430,66 @@ export async function getSegmentById(
         );
     }
 }
+
+// Get activity streams (heart rate, watts, GPS, etc.)
+export async function getActivityStreams(
+    accessToken: string,
+    activityId: number,
+    types: string[] // ['heartrate', 'watts', 'latlng', 'altitude']
+): Promise<any> {
+    if (!accessToken || !activityId) {
+        throw new Error('Access token and activity id are required params')
+    }
+
+    try {
+        const response = await stravaApi.get(`/activities/${activityId}/streams`)
+        return response.data;
+    } catch (error) {
+        return handleApiError<any>(
+            error,
+            `getActivityStreams(${activityId})`,
+            async () => getActivityStreams(process.env.STRAVA_ACCESS_TOKEN!, activityId, types)
+        );
+    }
+
+}
+
+// Get activity laps
+export async function getActivityLaps(
+    accessToken: string,
+    activityId: number
+): Promise<any> {
+    if (!accessToken || !activityId) {
+        throw new Error('Access token and activity id are required params')
+    }
+
+    try {
+        const response = await stravaApi.get(`/activities/${activityId}/laps`);
+        return response.data;
+    } catch (error) {
+        return handleApiError<any>(
+            error,
+            `getActivityLaps(${activityId})`,
+            async () => getActivityLaps(process.env.STRAVA_ACCESS_TOKEN!, activityId)
+        );
+    }
+
+}
+
+export async function fetchAllPages<T>(
+    fetchFn: (page: number) => Promise<T[]>,
+    maxPages: number = 10
+): Promise<T[]> {
+    const allResults: T[] = [];
+    for (let page = 1; page <= maxPages; page++) {
+        const results = await fetchFn(page);
+
+        if (results.length === 0) {
+            break; // No more results
+        }
+
+        allResults.push(...results);
+    }
+
+    return allResults;
+}
