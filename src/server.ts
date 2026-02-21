@@ -6,8 +6,10 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { loadConfig } from './config.js';
 import { getAuthenticatedAthlete } from './stravaClient.js';
-import { connectStravaTool } from "./tools/connectStrava.js";
 
+import { connectStravaTool, disconnectStravaTool } from "./tools/connectStrava.js";
+import { getRecentActivitiesTool } from './tools/getRecentActivities.js';
+// import { getAthleteStatsTool } from './tools/getAthleteStats.js';
 // Load .env file
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,66 +23,24 @@ const server = new McpServer({
     version: "0.1.0"
 });
 
-// Register connection tools
-server.registerTool(
-    connectStravaTool.name, {
-    description: connectStravaTool.description,
-    inputSchema: connectStravaTool.inputSchema?.shape ?? {},
-},
-    connectStravaTool.execute
-);
+function registerTool(tool: any) {
+    server.registerTool(
+        tool.name,
+        {
+            description: tool.description,
+            inputSchema: tool.inputSchema?.shape,
+        },
+        tool.execute
+    );
+}
 
-// Test tool: Get athlete profile
-server.registerTool(
-    "get-profile", {
-    description: "Get the authenticated athlete's profile from Strava",
-    inputSchema: {}
-},
-    async () => {
-        try {
-            // Load config
-            const config = await loadConfig();
-            const token = config.accessToken;
-
-            if (!token) {
-                return {
-                    content: [{
-                        type: "text" as const,
-                        text: "❌ Not connected to Strava. Please set up authentication first."
-                    }],
-                    isError: true
-                };
-            }
-
-            // Call API
-            const athlete = await getAuthenticatedAthlete(token);
-
-            // Format response
-            const text = [
-                `👤 **${athlete.firstname} ${athlete.lastname}** (ID: ${athlete.id})`,
-                `📍 ${[athlete.city, athlete.state, athlete.country].filter(Boolean).join(', ') || 'Location not set'}`,
-                `🏅 ${athlete.premium ? 'Premium' : 'Free'} account`,
-                `📅 Joined: ${new Date(athlete.created_at).toLocaleDateString()}`,
-            ].join('\n');
-
-            return {
-                content: [{
-                    type: "text" as const,
-                    text
-                }]
-            };
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            return {
-                content: [{
-                    type: "text" as const,
-                    text: `❌ Error: ${message}`
-                }],
-                isError: true
-            };
-        }
-    }
-);
+// Register all tools
+registerTool(connectStravaTool);
+registerTool(disconnectStravaTool);
+// registerTool(checkStravaConnectionTool);
+// registerTool(getAthleteProfileTool);
+registerTool(getRecentActivitiesTool);
+// registerTool(getAthleteStatsTool);
 
 async function startServer() {
     try {
