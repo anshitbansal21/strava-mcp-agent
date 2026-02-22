@@ -11,7 +11,6 @@ export const stravaApi = axios.create({
     timeout: 10000
 });
 
-stravaApi.interceptors.request.use()
 /**
  * Request interceptor - adds auth header to all requests
  */
@@ -454,20 +453,46 @@ export async function getActivityStreams(
 
 }
 
+// Lap Schema (List Activity Laps)
+const LapSchema = z.object({
+    id: z.number(),
+    activity: z.object({ id: z.number() }).optional(),
+    athlete: z.object({ id: z.number() }).optional(),
+    lap_index: z.number().optional(),
+    split: z.number().optional(),
+    name: z.string().optional(),
+    elapsed_time: z.number().optional(),
+    moving_time: z.number().optional(),
+    start_index: z.number().optional(),
+    end_index: z.number().optional(),
+    distance: z.number().optional(),
+    start_date: z.string().optional(),
+    start_date_local: z.string().optional(),
+    average_speed: z.number().optional(),
+    max_speed: z.number().optional(),
+}).passthrough();
+
+export type StravaLap = z.infer<typeof LapSchema>;
+
 // Get activity laps
 export async function getActivityLaps(
     accessToken: string,
     activityId: number
-): Promise<any> {
+): Promise<StravaLap[]> {
     if (!accessToken || !activityId) {
         throw new Error('Access token and activity id are required params')
     }
 
     try {
-        const response = await stravaApi.get(`/activities/${activityId}/laps`);
-        return response.data;
+        const response = await stravaApi.get(`/activities/${activityId}/laps`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        // Strava returns an array; if the body is unexpectedly empty, treat it as no laps.
+        const lapsPayload = response.data ?? [];
+        return z.array(LapSchema).parse(lapsPayload);
     } catch (error) {
-        return handleApiError<any>(
+        return handleApiError<StravaLap[]>(
             error,
             `getActivityLaps(${activityId})`,
             async () => getActivityLaps(process.env.STRAVA_ACCESS_TOKEN!, activityId)

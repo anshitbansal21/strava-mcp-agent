@@ -5,6 +5,7 @@ import {
     listAthleteRoutes,
     exportRouteGpx,
     fetchAllPages,
+    getActivityLaps,
 } from '../src/stravaClient.js';
 import { loadConfig } from '../src/config.js';
 
@@ -28,7 +29,9 @@ async function testAllApis() {
         // Test 2: Get activities
         console.log('2️⃣ Testing getRecentActivities...');
         const activities = await getRecentActivities(token, 5);
-        console.log(`✅ Found ${JSON.stringify(activities, null, 4)} activities\n`);
+        console.log(`✅ Found ${activities.length} activities`);
+        const activityIdForLaps = activities[0]?.id;
+        console.log(`   First activity ID: ${activityIdForLaps}\n`);
         // Test 3: Get stats
         console.log('3️⃣ Testing getAthleteStats...');
         const stats = await getAthleteStats(token, athlete.id);
@@ -39,11 +42,13 @@ async function testAllApis() {
         const routes = await listAthleteRoutes(token, 1, 5);
         console.log(`✅ Found ${JSON.stringify(routes, null, 4)} routes\n`);
 
-        const allActivities = await fetchAllPages(
-            (page) => getRecentActivities(token, 5), 10
-        );
+        // const allActivities = await fetchAllPages(
+        //     (page) => getRecentActivities(token, 5), 10
+        // );
 
-        console.log(`✅ All Activities ${JSON.stringify(allActivities, null, 4)}\n`);
+        // console.log(`✅ All Activities ${JSON.stringify(allActivities, null, 4)}\n`);
+        const lapsData = await getActivityLaps(token, 15948381788);
+        console.log(`Laps data: ${JSON.stringify(lapsData, null, 4)}`)
         console.log('🎉 All API tests passed!');
     } catch (error) {
         console.error('❌ Test failed:', error);
