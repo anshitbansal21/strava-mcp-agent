@@ -103,7 +103,14 @@ export function hasClientCredentials(config: StravaConfig): boolean {
 }
 
 export function hasValidTokens(config: StravaConfig): boolean {
-    return !!(config.accessToken && config.refreshToken && config.expiresAt && config.expiresAt > Date.now());
+    if (!config.accessToken || !config.refreshToken || !config.expiresAt) return false;
+
+    // Strava `expires_at` is seconds since epoch. Handle both seconds and ms defensively.
+    const expiresAtMs =
+        config.expiresAt < 10_000_000_000 ? config.expiresAt * 1000 : config.expiresAt;
+
+    // Small skew so we proactively refresh before expiry.
+    return expiresAtMs > Date.now() + 60_000;
 }
 
 /**

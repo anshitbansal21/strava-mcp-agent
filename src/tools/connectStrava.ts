@@ -42,12 +42,15 @@ export const connectStravaTool = {
             console.error('🚀 Starting OAuth flow...');
             const authUrl = getAuthUrl();
 
+            // Start server first (so the browser can load immediately)
+            const authPromise = startAuthServer();
+
             // Open browser
             await open(authUrl);
             console.error('📱 Browser opened to:', authUrl);
 
-            // Start server and wait for completion
-            const result = await startAuthServer();
+            // Wait for completion
+            const result = await authPromise;
 
             if (result.success) {
                 const greeting = result.athleteName
