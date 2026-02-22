@@ -5,10 +5,11 @@ import * as dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import { loadConfig } from './config.js';
-import { getAuthenticatedAthlete } from './stravaClient.js';
-
 import { connectStravaTool, disconnectStravaTool } from "./tools/connectStrava.js";
 import { getRecentActivitiesTool } from './tools/getRecentActivities.js';
+import { getAthleteStatsTool } from "./tools/getAthleteStats.js";
+import { getAuthenticatedAthleteTool } from "./tools/getAuthenticatedAthlete.js";
+import { getActivityDetailsTool } from "./tools/getActivityDetails.js";
 // import { getAthleteStatsTool } from './tools/getAthleteStats.js';
 // Load .env file
 const __filename = fileURLToPath(import.meta.url);
@@ -37,8 +38,9 @@ function registerTool(tool: any) {
 // Register all tools
 registerTool(connectStravaTool);
 registerTool(disconnectStravaTool);
-// registerTool(checkStravaConnectionTool);
-// registerTool(getAthleteProfileTool);
+registerTool(getAthleteStatsTool);
+registerTool(getAuthenticatedAthleteTool);
+registerTool(getActivityDetailsTool);
 registerTool(getRecentActivitiesTool);
 // registerTool(getAthleteStatsTool);
 

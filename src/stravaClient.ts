@@ -70,7 +70,7 @@ async function refreshAccessToken(): Promise<void> {
     }
 
     try {
-        const response = await axios.post('https://www.strava.comn/oauth/token', {
+        const response = await axios.post('https://www.strava.com/oauth/token', {
             client_id: clientId,
             client_secret: clientSecret,
             refresh_token: refreshToken,

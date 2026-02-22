@@ -29,11 +29,10 @@ async function testAllApis() {
         console.log('2️⃣ Testing getRecentActivities...');
         const activities = await getRecentActivities(token, 5);
         console.log(`✅ Found ${JSON.stringify(activities, null, 4)} activities\n`);
-
         // Test 3: Get stats
         console.log('3️⃣ Testing getAthleteStats...');
         const stats = await getAthleteStats(token, athlete.id);
-        console.log(`✅ Recent Run: ${(stats.recent_run_totals.distance / 1000).toFixed(1)} km\n`);
+        console.log(`✅ Recent Run: ${JSON.stringify(stats, null, 2)}\n`);
 
         // Test 4: Get routes
         console.log('4️⃣ Testing listAthleteRoutes...');
