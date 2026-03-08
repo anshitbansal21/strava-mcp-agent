@@ -43,8 +43,6 @@ registerTool(getAthleteStatsTool);
 registerTool(getAuthenticatedAthleteTool);
 registerTool(getActivityDetailsTool);
 registerTool(getAllActivitiesTool);
-// registerTool(getAthleteStatsTool);
-
 async function startServer() {
     try {
         // Load config on startup
