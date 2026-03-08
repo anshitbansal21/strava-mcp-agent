@@ -12,7 +12,7 @@ If you're a runner looking to understand your training better or just curious ab
    npm install
 ```
 
-2. Run in development:
+2. Build the files:
 ```bash
    npm run build
 ```
