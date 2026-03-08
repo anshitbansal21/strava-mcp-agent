@@ -11,7 +11,7 @@
     "test": "vitest run"
   },
   "bin": {
-    "strava-mcp-server": "./dist/server.js"
+    "my-strava-mcp-server": "./dist/server.js"
   },
   "keywords": [],
   "author": "",

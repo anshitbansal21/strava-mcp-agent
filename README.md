@@ -12,31 +12,21 @@ If you're a runner looking to understand your training better or just curious ab
    npm install
 ```
 
-2. Configure environment (optional):
-```bash
-   cp .env.example .env
-   # Edit .env with your Strava API credentials
-```
-
-3. Run in development:
-```bash
-   npm run dev
-```
-
-4. Build for production:
+2. Run in development:
 ```bash
    npm run build
-   npm start
+```
+
+3. Install the package globally -
+```bash
+   npm install -g .
 ```
 
 ## Add the MCP server 
 ```json
    {
-      "strava-server": {
-         "command": "<path to your node binary>", // you get this by running `which node`
-         "args": [
-            "<absolute path to dist/server.js file >"
-         ]
+      "strava-mcp": {
+         "command": "my-strava-mcp-server", // you get this by running `which node`
       }
    }
 ```
