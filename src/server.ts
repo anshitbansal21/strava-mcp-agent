@@ -10,6 +10,7 @@ import { getRecentActivitiesTool } from './tools/getRecentActivities.js';
 import { getAthleteStatsTool } from "./tools/getAthleteStats.js";
 import { getAuthenticatedAthleteTool } from "./tools/getAuthenticatedAthlete.js";
 import { getActivityDetailsTool } from "./tools/getActivityDetails.js";
+import { getAllActivitiesTool } from "./tools/getAllActivities.js";
 // import { getAthleteStatsTool } from './tools/getAthleteStats.js';
 // Load .env file
 const __filename = fileURLToPath(import.meta.url);
@@ -41,7 +42,7 @@ registerTool(disconnectStravaTool);
 registerTool(getAthleteStatsTool);
 registerTool(getAuthenticatedAthleteTool);
 registerTool(getActivityDetailsTool);
-registerTool(getRecentActivitiesTool);
+registerTool(getAllActivitiesTool);
 // registerTool(getAthleteStatsTool);
 
 async function startServer() {
