@@ -26,7 +26,7 @@ If you're a runner looking to understand your training better or just curious ab
 ```json
    {
       "strava-mcp": {
-         "command": "my-strava-mcp-server", // you get this by running `which node`
+         "command": "my-strava-mcp-server",
       }
    }
 ```
